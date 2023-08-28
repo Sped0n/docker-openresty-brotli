@@ -6,7 +6,10 @@ ARG RESTY_IMAGE_TAG="focal"
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
-LABEL maintainer="Evan Wies <evan@neomantra.net>"
+LABEL maintainer="spedon <realsped0n@outlook.com>"
+
+ENV NGX_BROTLI_COMMIT="6e975bcb015f62e1f303054897783355e2a877dc" \
+    PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
 # Docker Build Arguments
 ARG RESTY_IMAGE_BASE="ubuntu"
@@ -49,6 +52,7 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-stream \
     --with-stream_ssl_module \
     --with-threads \
+    --add-module=/usr/src/ngx_brotli \
     "
 ARG RESTY_CONFIG_OPTIONS_MORE=""
 ARG RESTY_LUAJIT_OPTIONS="--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'"
@@ -105,6 +109,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         unzip \
         wget \
         zlib1g-dev \
+        git \
+        autoconf \
+        libtool \
+        automake \
         ${RESTY_ADD_PACKAGE_BUILDDEPS} \
         ${RESTY_ADD_PACKAGE_RUNDEPS} \
     && cd /tmp \
@@ -145,6 +153,19 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && cd /tmp \
     && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && tar xzf openresty-${RESTY_VERSION}.tar.gz \
+    && echo 'fetching libbrotli' \
+    && cd /usr/local/lib \
+    && git clone https://github.com/bagder/libbrotli \
+    && cd /usr/local/lib/libbrotli \
+    && echo 'building libbrotli' \
+    && ./autogen.sh \
+    && ./configure \
+    && make install \
+    && cd /usr/src \
+    && echo 'fetching ngx_brotli' \
+    && git clone --recursive https://github.com/google/ngx_brotli.git \
+    && cd ngx_brotli \
+    && git checkout -b $NGX_BROTLI_COMMIT \
     && cd /tmp/openresty-${RESTY_VERSION} \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
