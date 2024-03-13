@@ -14,9 +14,9 @@ ENV NGX_BROTLI_COMMIT="6e975bcb015f62e1f303054897783355e2a877dc" \
 # Docker Build Arguments
 ARG RESTY_IMAGE_BASE="ubuntu"
 ARG RESTY_IMAGE_TAG="focal"
-ARG RESTY_VERSION="1.21.4.2"
+ARG RESTY_VERSION="1.25.3.1"
 ARG RESTY_LUAROCKS_VERSION="3.9.2"
-ARG RESTY_OPENSSL_VERSION="1.1.1u"
+ARG RESTY_OPENSSL_VERSION="1.1.1w"
 ARG RESTY_OPENSSL_PATCH_VERSION="1.1.1f"
 ARG RESTY_OPENSSL_URL_BASE="https://www.openssl.org/source"
 ARG RESTY_PCRE_VERSION="8.45"
@@ -43,6 +43,7 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-http_stub_status_module \
     --with-http_sub_module \
     --with-http_v2_module \
+    --with-http_v3_module \
     --with-http_xslt_module=dynamic \
     --with-ipv6 \
     --with-mail \
