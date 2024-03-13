@@ -8,8 +8,7 @@ FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
 LABEL maintainer="spedon <realsped0n@outlook.com>"
 
-ENV NGX_BROTLI_COMMIT="6e975bcb015f62e1f303054897783355e2a877dc" \
-    PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
+ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
 # Docker Build Arguments
 ARG RESTY_IMAGE_BASE="ubuntu"
@@ -106,6 +105,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         libreadline-dev \
         libxslt1-dev \
         make \
+        cmake \
         perl \
         unzip \
         wget \
@@ -155,18 +155,16 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && curl -fSL https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && tar xzf openresty-${RESTY_VERSION}.tar.gz \
     && echo 'fetching libbrotli' \
-    && cd /usr/local/lib \
-    && git clone https://github.com/bagder/libbrotli \
-    && cd /usr/local/lib/libbrotli \
-    && echo 'building libbrotli' \
-    && ./autogen.sh \
-    && ./configure \
-    && make install \
     && cd /usr/src \
     && echo 'fetching ngx_brotli' \
-    && git clone --recursive https://github.com/google/ngx_brotli.git \
-    && cd ngx_brotli \
-    && git checkout -b $NGX_BROTLI_COMMIT \
+    && git clone --recurse-submodules https://github.com/google/ngx_brotli.git \
+    && cd ngx_brotli/deps/brotli \
+    && mkdir out \
+    && cd out \
+    && echo 'building libbrotli' \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed .. \
+    && cmake --build . --config Release --target brotlienc \
+    && echo 'building nginx' \
     && cd /tmp/openresty-${RESTY_VERSION} \
     && if [ -n "${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}" ]; then eval $(echo ${RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE}); fi \
     && eval ./configure -j${RESTY_J} ${_RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
