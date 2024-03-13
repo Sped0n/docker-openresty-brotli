@@ -8,7 +8,8 @@ FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
 LABEL maintainer="spedon <realsped0n@outlook.com>"
 
-ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
+ENV NGX_BROTLI_COMMIT="6e975bcb015f62e1f303054897783355e2a877dc" \
+    PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
 # Docker Build Arguments
 ARG RESTY_IMAGE_BASE="ubuntu"
@@ -157,8 +158,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && echo 'fetching libbrotli' \
     && cd /usr/src \
     && echo 'fetching ngx_brotli' \
-    && git clone --recurse-submodules https://github.com/google/ngx_brotli.git \
-    && cd ngx_brotli/deps/brotli \
+    && git clone https://github.com/google/ngx_brotli.git \
+    && cd ngx_brotli \
+    && git checkout -b $NGX_BROTLI_COMMIT \
+    && git submodule update --init --recursive \
+    && cd deps/brotli \
     && mkdir out \
     && cd out \
     && echo 'building libbrotli' \
